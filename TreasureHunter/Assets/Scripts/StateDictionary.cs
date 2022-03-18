@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 using HashedState = System.Tuple<UnityEngine.Vector3, CellInfo, System.Tuple<CellInfo, CellInfo, CellInfo, CellInfo>>;
@@ -28,6 +29,13 @@ public class StateDictionary
         {
             return null;
         }
+    }
+
+    public static PlayerState GetRandomPlayerState()
+    {
+        int totalStates = stateDictionary.Keys.Count;
+        int index = UnityEngine.Random.Range(0, totalStates);
+        return stateDictionary[stateDictionary.Keys.ToArray<HashedState>()[index]];
     }
 
     public static bool ContainsState(HashedState hashedState)

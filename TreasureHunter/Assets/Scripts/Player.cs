@@ -2,27 +2,24 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
-using NumSharp;
 
 using State = System.Tuple<UnityEngine.Vector3, CellInfo, System.Tuple<CellInfo, CellInfo, CellInfo, CellInfo>>;
 using NextCellInfo = System.Tuple<CellInfo, CellInfo, CellInfo, CellInfo>;
-using ActionQ = System.Collections.Generic.Dictionary<Action, float>;
-using ActionProbability = System.Collections.Generic.Dictionary<Action, float>;
 public class Player : MonoBehaviour
 {
     private State currentState  = null;
     private State nextState = null;
     private Q actionValueFuction;
     private Policy policy;
-    // private Dictionary<State, ActionQ> Q = new Dictionary<State, ActionQ>();
-    // private Dictionary<State, ActionProbability> policy = new Dictionary<State, ActionProbability>();
+    private Model model;
     private Action[] actionSpace = {Action.LEFT, Action.UP, Action.DOWN, Action.RIGHT};
     private bool hasPickedTreasure = false;
     private bool hasHitEnemy = false;
-    private float currentReward = 0.0f;
+    // private float currentReward = 0.0f;
+    private float kappa = 0.001f;
     private Action currentAction;
-    private float epsilon = 0.1f;
-    public void SetCurrentState(World world, MyGrid grid)
+
+    private State GetState(World world, MyGrid grid)
     {
         Vector3 currentPos = transform.position;
 
@@ -36,70 +33,27 @@ public class Player : MonoBehaviour
         NextCellInfo neighsStates = Tuple.Create(world.GetWorldCellState(upCell), world.GetWorldCellState(leftCell),
                                                     world.GetWorldCellState(downCell), world.GetWorldCellState(rightCell));
 
-        // nextState = currentState;
-
-        currentState = Tuple.Create(currentPos, currentCellInfo, neighsStates);
-        // print(currentState);
-
-        // if(nextState == null)
-        // {
-        //     nextState = currentState;
-        // }
+        return Tuple.Create(currentPos, currentCellInfo, neighsStates);
+    }
+    public void SetCurrentState(World world, MyGrid grid)
+    {
+        currentState = GetState(world, grid);
     }
 
     public void SetNextState(World world, MyGrid grid)
     {
-        Vector3 currentPos = transform.position;
-
-        CellInfo currentCellInfo = world.GetWorldCellState(currentPos);
-
-        Vector3 upCell = grid.NodeFromWorldPoint(new Vector3(currentPos.x, currentPos.y + 1.0f, currentPos.z)).worldPosition;
-        Vector3 leftCell = grid.NodeFromWorldPoint(new Vector3(currentPos.x - 1.0f, currentPos.y, currentPos.z)).worldPosition;
-        Vector3 downCell = grid.NodeFromWorldPoint(new Vector3(currentPos.x, currentPos.y - 1.0f, currentPos.z)).worldPosition;
-        Vector3 rightCell = grid.NodeFromWorldPoint(new Vector3(currentPos.x + 1.0f, currentPos.y, currentPos.z)).worldPosition;
-
-        NextCellInfo neighsStates = Tuple.Create(world.GetWorldCellState(upCell), world.GetWorldCellState(leftCell),
-                                                    world.GetWorldCellState(downCell), world.GetWorldCellState(rightCell));
-
-        // nextState = currentState;
-
-        nextState = Tuple.Create(currentPos, currentCellInfo, neighsStates);
+        nextState = GetState(world, grid);
     }
 
     public void SelectAction()
     {
-        // Action bestAction = GetBestAction();
         Action bestAction = GetBestAction();
-        // policy[currentState] = GetEpsilonGreedy(bestAction);
         policy.EpsilonGreedyUpdate(currentState, bestAction);
-        // currentAction = ChooseAction();
         currentAction = policy.ChooseAction(currentState);
     }
 
     private Action GetBestAction()
     {
-        // if(Q.ContainsKey(currentState))
-        // {
-        //     ActionQ actionQ = Q[currentState];
-        //     Action bestAction = Action.IDLE;
-        //     float maxActionValue = Mathf.NegativeInfinity;
-        //     foreach(Action action in actionQ.Keys)
-        //     {
-        //         float actionValue = actionQ[action];
-        //         if(actionValue > maxActionValue)
-        //         {
-        //             maxActionValue = actionValue;
-        //             bestAction = action;
-        //         }
-        //     }
-        //     return bestAction;
-        // }
-        // else
-        // {
-        //     AddActionQ(currentState);
-        //     AddActionProbabilities(currentState);
-        //     return GetBestAction();
-        // }
         if(actionValueFuction.ContainsState(currentState))
         {
             return actionValueFuction.GetBestAction(currentState);
@@ -109,95 +63,9 @@ public class Player : MonoBehaviour
             PlayerState playerState = new PlayerState(currentState.Item1, currentState.Item2, currentState.Item3);
             actionValueFuction.AddPlayerState(playerState);
             policy.AddPlayerState(playerState);
+            model.AddPlayerState(playerState);
             return GetBestAction();
         }
-    }
-
-    private ActionProbability GetEpsilonGreedy(Action bestAction)
-    {
-        ActionProbability actionProbabilities = new ActionProbability();
-        int totalActions = actionSpace.Length;
-        foreach(Action action in actionSpace)
-        {
-            if(action == bestAction)
-            {
-                actionProbabilities.Add(action, 1.0f - epsilon + (epsilon / totalActions));
-            }
-            else
-            {
-                actionProbabilities.Add(action, epsilon / totalActions);
-            }
-        }
-
-        return actionProbabilities;
-    }
-
-    private Action ChooseAction()
-    {
-        // double sum = 0.0f;
-        // ActionProbability actionProbabilities = policy[currentState];
-        // List<double> distribution = new List<double>();
-        // List<Action> actions = new List<Action>();
-        // foreach(Action action in actionProbabilities.Keys)
-        // {
-        //     actions.Add(action);
-        //     distribution.Add(actionProbabilities[action]);
-        // }
-
-        // // print(np.random.choice(actionSpace, p:distribution.ToArray()));
-        // NDArray test = np.zeros(actions.Count);
-        // NDArray test2 = np.zeros(distribution.Count);
-        // // print(test);
-        // for(int i = 0; i < actions.Count; i++)
-        // {
-        //     test[i] = (int)actions[i];
-        //     test2[i] = distribution[i];
-        // }
-
-        // // print(test);
-        // // print(test2);
-        // // print(np.random.choice(test, probabilities:distribution.ToArray()));
-
-        // List<double> cumulative = distribution.Select(c => {
-        //     var result = sum + c;
-        //     sum += c;
-        //     return result;
-        // }).ToList();
-
-        // float r = UnityEngine.Random.value;
-        // int idx = cumulative.BinarySearch(r);
-        // if(idx < 0)
-        // {
-        //     idx = ~idx;
-        // }
-        // if(idx > cumulative.Count - 1)
-        // {
-        //     idx = cumulative.Count - 1;
-        // }
-
-        // return actions[idx];
-        return Action.IDLE;
-    }
-
-    private void AddActionQ(State state)
-    {
-        // ActionQ actionQ = new ActionQ();
-        // foreach(Action action in actionSpace)
-        // {
-        //     actionQ.Add(action, 0.0f);
-        // }
-        // Q.Add(state, actionQ);
-    }
-
-    private void AddActionProbabilities(State state)
-    {
-        // int totalActions = actionSpace.Length;
-        // ActionProbability actionProbabilities = new ActionProbability();
-        // foreach(Action action in actionSpace)
-        // {
-        //     actionProbabilities.Add(action, (1.0f / totalActions));
-        // }
-        // policy.Add(state, actionProbabilities);
     }
 
     public void Move(MyGrid grid)
@@ -260,43 +128,55 @@ public class Player : MonoBehaviour
         return currentState == nextState;
     }
 
+    public void UpdateAllTau()
+    {
+        model.IncreaseAllTau();
+        model.ResetTau(currentState, currentAction);
+    }
+
     public void QUpdate(float reward, bool isEndState)
     {
         if(!isEndState)
         {
-            float maxQ = GetMaxQ();
+            float maxQ = GetMaxQ(nextState);
             // Q[currentState][currentAction] += 0.01f * (reward + 1.0f * maxQ - Q[currentState][currentAction]);
-            actionValueFuction.Update(currentState, currentAction, maxQ, reward);
+            actionValueFuction.Update(currentState, currentAction, maxQ, reward, isEndState);
         }
         else
             // Q[currentState][currentAction] += 0.01f * (reward - Q[currentState][currentAction]);
-            actionValueFuction.Update(currentState, currentAction, 0.0f, reward);
+            actionValueFuction.Update(currentState, currentAction, 0.0f, reward, isEndState);
+        // currentState = nextState;
+    }
+
+    public void UpdateModel(float reward)
+    {
+        model.Update(currentState, currentAction, nextState, reward);
         currentState = nextState;
     }
 
-    private float GetMaxQ()
+    public void RunSimulation()
     {
-        // if(Q.ContainsKey(nextState))
-        // {
-        //     float maxQ = Mathf.NegativeInfinity;
-        //     ActionQ actionQ = Q[nextState];
-        //     foreach(Action action in actionQ.Keys)
-        //     {
-        //         float qValue = actionQ[action];
-        //         if(qValue > maxQ)
-        //         {
-        //             maxQ = qValue;
-        //         }
-        //     }
+        Tuple<PlayerState, PlayerState, float, float> simulationResult = model.GetRandomPlayerStateAndReward();
+        if(simulationResult != null)
+        {
+            State currentSimulatedState = simulationResult.Item1.GetHashedState();
+            State nextSimulatedState = simulationResult.Item2.GetHashedState();
+            // print(currentSimulatedState);
+            // print(nextSimulatedState);
+            float simulationTau = simulationResult.Item4;
+            float simulationReward = simulationResult.Item3 + kappa * Mathf.Sqrt(simulationTau);
+            if(!simulationResult.Item1.isTerminal)
+            {
+                float maxQ = GetMaxQ(nextSimulatedState);
+                actionValueFuction.Update(currentSimulatedState, currentAction, maxQ, simulationReward, simulationResult.Item1.isTerminal);
+            }
+            else
+                actionValueFuction.Update(currentSimulatedState, currentAction, 0.0f, simulationReward, simulationResult.Item1.isTerminal);
+        }
+    }
 
-        //     return maxQ;
-        // }
-        // else
-        // {
-        //     AddActionQ(nextState);
-        //     AddActionProbabilities(nextState);
-        //     return GetMaxQ();
-        // }
+    private float GetMaxQ(State nextState)
+    {
         if(actionValueFuction.ContainsState(nextState))
         {
             return actionValueFuction.GetMaxQ(nextState);
@@ -306,14 +186,26 @@ public class Player : MonoBehaviour
             PlayerState playerState = new PlayerState(nextState.Item1, nextState.Item2, nextState.Item3);
             policy.AddPlayerState(playerState);
             actionValueFuction.AddPlayerState(playerState);
-            return GetMaxQ();
+            model.AddPlayerState(playerState);
+            return GetMaxQ(nextState);
         }
+    }
+
+    public float GetQ()
+    {
+        return actionValueFuction.GetQ(currentState, currentAction);
+    }
+
+    public Action GetCurrentAction()
+    {
+        return currentAction;
     }
 
     public void SaveData()
     {
         Serializer.WriteToBinaryFile<Policy>("Assets/Resources/policy.txt", policy);
         Serializer.WriteToBinaryFile<Q>("Assets/Resources/Q.txt", actionValueFuction);
+        Serializer.WriteToBinaryFile<Model>("Assets/Resources/model.txt", model);
     }
 
     public void LoadData()
@@ -323,15 +215,16 @@ public class Player : MonoBehaviour
             //Load Q and Policy and initialize the StateDictionary
             policy = Serializer.ReadFromBinaryFile<Policy>("Assets/Resources/policy.txt");
             actionValueFuction = Serializer.ReadFromBinaryFile<Q>("Assets/Resources/Q.txt");
+            model = Serializer.ReadFromBinaryFile<Model>("Assets/Resources/model.txt");
             policy.InitializeStateDictionary();
             actionValueFuction.InitializeStateDictionary();
+            model.InitializeStateDictionary();
         }
         else
         {
             policy = new Policy();
             actionValueFuction = new Q();
+            model = new Model();
         }
-        // Q = Serializer.ReadFromJsonFile<Dictionary<State, ActionQ>>("Assets/Resources/Q.txt");
-        // policy = Serializer.ReadFromJsonFile<Dictionary<State, ActionProbability>>("Assets/Resources/policy.txt");
     }
 }

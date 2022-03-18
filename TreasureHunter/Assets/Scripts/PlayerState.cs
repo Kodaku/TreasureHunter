@@ -13,11 +13,14 @@ public class PlayerState
     private float[] position;
     private CellInfo currentCellInfo;
     private CellInfo[] neighboursCellsInfo;
-    List<PlayerAction> actions = new List<PlayerAction>();
+    private PlayerAction[] actions;
+    private PlayerState[] nextStates;
     private Action[] actionSpace = {Action.LEFT, Action.UP, Action.DOWN, Action.RIGHT};
     [NonSerialized]
     private HashedState hashedState;
+    private float[] tau;
     private float epsilon = 0.1f;
+    private bool m_isTerminal = false;
 
     public PlayerState(Vector3 _position, CellInfo _currentCellInfo, NeighboursInfo _neighboursCellInfo)
     {
@@ -27,6 +30,14 @@ public class PlayerState
                         {_neighboursCellInfo.Item1, _neighboursCellInfo.Item2, _neighboursCellInfo.Item3, _neighboursCellInfo.Item4};
         GenerateHashCode();
         GenerateBasicActions();
+        InitializeNextStates();
+        InitializeTau();
+    }
+
+    public bool isTerminal
+    {
+        get { return m_isTerminal; }
+        set { m_isTerminal = value; }
     }
 
     public void GenerateHashCode()
@@ -40,10 +51,31 @@ public class PlayerState
     private void GenerateBasicActions()
     {
         int totalActions = actionSpace.Length;
+        actions = new PlayerAction[totalActions];
         foreach(Action action in actionSpace)
         {
             PlayerAction playerAction = new PlayerAction(action, 1.0f / totalActions);
-            actions.Add(playerAction);
+            actions[(int)action] = playerAction;
+        }
+    }
+
+    private void InitializeNextStates()
+    {
+        int totalActions = actionSpace.Length;
+        nextStates = new PlayerState[totalActions];
+        foreach(Action action in actionSpace)
+        {
+            nextStates[(int)action] = null;
+        }
+    }
+
+    private void InitializeTau()
+    {
+        int totalActions = actionSpace.Length;
+        tau = new float[totalActions];
+        foreach(Action action in actionSpace)
+        {
+            tau[(int)action] = 0.0f;
         }
     }
 
@@ -94,7 +126,7 @@ public class PlayerState
 
     public Action GetBestAction()
     {
-        Action bestAction = Action.IDLE;
+        Action bestAction = Action.LEFT;
         float maxActionValue = Mathf.NegativeInfinity;
         foreach(PlayerAction playerAction in actions)
         {
@@ -106,6 +138,37 @@ public class PlayerState
             }
         }
         return bestAction;
+    }
+
+    public void SetNextStateAndReward(Action currentAction, PlayerState nextState, float reward)
+    {
+        nextStates[(int)currentAction] = nextState;
+        PlayerAction currentPlayerActionInstance = actions[(int)currentAction];
+        currentPlayerActionInstance.reward = reward;
+    }
+
+    public Tuple<PlayerState, PlayerState, float, float> GetRandomNextStateAndReward()
+    {
+        List<Action> validActions = new List<Action>();
+        foreach(Action action in actionSpace)
+        {
+            if(nextStates[(int)action] != null)
+            {
+                validActions.Add(action);
+            }
+        }
+        int totalActions = validActions.Count;
+        // Debug.Log(totalActions);
+        if(totalActions > 0)
+        {
+            int index = UnityEngine.Random.Range(0, totalActions);
+            Action randomAction = validActions[index];
+            PlayerAction randomTakenAction = actions[(int)randomAction];
+            // Debug.Log(randomAction + ", " + nextStates.Length);
+            // Debug.Log(nextStates[0] + ", " + nextStates[1] + ", " + nextStates[2] + ", " + nextStates[3]);
+            return Tuple.Create(this, nextStates[(int)randomAction], randomTakenAction.reward, tau[(int)randomAction]);
+        }
+        return null;
     }
 
     public float GetMaxQ()
@@ -123,20 +186,36 @@ public class PlayerState
         return maxQ;
     }
 
-    public void UpdateActionValue(Action currentAction, float maxQ, float reward)
+    public float GetQ(Action currentAction)
     {
-        foreach(PlayerAction playerAction in actions)
+        return actions[(int)currentAction].qValue;
+    }
+
+    public void UpdateActionValue(Action currentAction, float maxQ, float reward, bool isEndState)
+    {
+        m_isTerminal = isEndState;
+        PlayerAction playerAction = actions[(int)currentAction];
+        actions[(int)currentAction].qValue += 0.01f * (reward + 1.0f * maxQ - playerAction.qValue);
+        // foreach(PlayerAction playerAction in actions)
+        // {
+        //     if(playerAction.name == currentAction)
+        //     {
+        //         playerAction.qValue += 0.01f * (reward + 1.0f * maxQ - playerAction.qValue);
+        //     }
+        // }
+    }
+
+    public void IncreaseTau()
+    {
+        foreach(Action action in actionSpace)
         {
-            if(playerAction.name == currentAction)
-            {
-                playerAction.qValue += 0.01f * (reward + 1.0f * maxQ - playerAction.qValue);
-            }
+            tau[(int)action] += 1.0f;
         }
     }
 
-    public List<PlayerAction> GetPlayerActions()
+    public void ResetTau(Action currentAction)
     {
-        return actions;
+        tau[(int)currentAction] = 0.0f;
     }
 
     public HashedState GetHashedState()

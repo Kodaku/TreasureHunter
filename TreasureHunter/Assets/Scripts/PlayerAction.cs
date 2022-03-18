@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
- [Serializable]
+[Serializable]
 public class PlayerAction
 {
     private Action m_name;
     private float m_probability;
     private float m_qValue;
+    private float m_reward;
 
     public PlayerAction(Action name, float probability)
     {
@@ -33,5 +34,11 @@ public class PlayerAction
     {
         get { return m_qValue; }
         set { m_qValue = value; }
+    }
+
+    public float reward
+    {
+        get { return m_reward; }
+        set { m_reward = value; }
     }
 }

@@ -1,8 +1,8 @@
 public enum Action
 {
-    UP = 0,
+    UP = 2,
     DOWN = 1,
-    LEFT = 2,
+    LEFT = 0,
     RIGHT = 3,
     IDLE = 4
 }

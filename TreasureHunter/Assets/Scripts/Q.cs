@@ -40,9 +40,15 @@ public class Q
         return playerState.GetMaxQ();
     }
 
-    public void Update(HashedState hashedState, Action currentAction, float maxQ, float reward)
+    public float GetQ(HashedState hashedState, Action currentAction)
     {
         PlayerState playerState = StateDictionary.GetPlayerState(hashedState);
-        playerState.UpdateActionValue(currentAction, maxQ, reward);
+        return playerState.GetQ(currentAction);
+    }
+
+    public void Update(HashedState hashedState, Action currentAction, float maxQ, float reward, bool isEndState)
+    {
+        PlayerState playerState = StateDictionary.GetPlayerState(hashedState);
+        playerState.UpdateActionValue(currentAction, maxQ, reward, isEndState);
     }
 }

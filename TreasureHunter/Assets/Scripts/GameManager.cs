@@ -23,10 +23,13 @@ public class GameManager : MonoBehaviour
     private float currentPlayerMoveTimer = 0.0f;
     private int score;
     private int maxScore = 99999;
+    private DataManager dataManager = new DataManager();
+    private Debugger debugger;
     // Start is called before the first frame update
     void Start()
     {
         grid.Initialize();
+        debugger = GameObject.Find("Debugger").GetComponent<Debugger>();
 
         playerObj = Instantiate(playerObj, Vector3.zero, Quaternion.identity);
         GameObject newEnemy = Instantiate(enemyObj, Vector3.zero, Quaternion.identity);
@@ -38,6 +41,10 @@ public class GameManager : MonoBehaviour
         newEnemy.transform.position = grid.NodeFromGridPoint(0, Random.Range(0, grid.rows)).worldPosition;
 
         player = playerObj.GetComponent<Player>();
+
+        int startX = Mathf.RoundToInt(player.transform.position.x);
+        int startY = Mathf.RoundToInt(player.transform.position.y);
+        dataManager.SetStartValues(startX, startY);
 
         Enemy enemy = newEnemy.GetComponent<Enemy>();
         enemies = new List<Enemy>();
@@ -57,6 +64,11 @@ public class GameManager : MonoBehaviour
 
     private void Reset()
     {
+        // dataManager.RegisterObservation();
+        dataManager.Reset();
+
+        debugger.Reset();
+
         foreach(Enemy enemy1 in enemies)
         {
             enemy1.gameObject.SetActive(false);
@@ -68,6 +80,10 @@ public class GameManager : MonoBehaviour
         treasure.transform.position = grid.NodeFromGridPoint(2, grid.rows - 5).worldPosition;
         playerObj.transform.position = grid.NodeFromGridPoint(grid.columns - 1, Random.Range(0, grid.rows)).worldPosition;
         newEnemy.transform.position = grid.NodeFromGridPoint(0, Random.Range(0, grid.rows)).worldPosition;
+
+        int startX = Mathf.RoundToInt(player.transform.position.x);
+        int startY = Mathf.RoundToInt(player.transform.position.y);
+        dataManager.SetStartValues(startX, startY);
         
         Enemy enemy = newEnemy.GetComponent<Enemy>();
         enemies = new List<Enemy>();
@@ -80,7 +96,7 @@ public class GameManager : MonoBehaviour
         // score = 0;
         // scoreText.text = score.ToString();
 
-        player.SaveData();
+        // player.SaveData();
     }
 
     // Update is called once per frame
@@ -96,32 +112,54 @@ public class GameManager : MonoBehaviour
         currentPlayerMoveTimer += Time.deltaTime;
         if(currentPlayerMoveTimer > playerMoveTimer)
         {
-            currentPlayerMoveTimer = 0.0f;
             player.SelectAction();
+            float currentQ = player.GetQ();
+            
+            dataManager.UpdateTimer(currentPlayerMoveTimer);
+            dataManager.SetQValue(currentQ);
+            dataManager.SetMinMaxQValues(currentQ);
+
+            debugger.SetColors(currentQ, dataManager.GetMinQValue(), dataManager.GetMaxQValue());
+            debugger.SpawnMove(player, grid);
+
             player.Move(grid);
             player.SetNextState(world, grid);
+            player.UpdateAllTau();
             if(player.HasPickedTreasure())
             {
                 //Increase score
                 player.ResetPickTreasure();
-                player.QUpdate(100.0f, false);
+                player.QUpdate(100.0f, true);
+                player.UpdateModel(100.0f);
                 IncreaseScore();
+                dataManager.TreasureFound();
                 Reset();
             }
             else if(player.HasHitEnemy())
             {
                 player.ResetHitEnemy();
                 player.QUpdate(-100.0f, true);
+                player.UpdateModel(-100.0f);
+                dataManager.EnemyFound();
                 Reset();
             }
             else if(player.IsStuck())
             {
-                player.QUpdate(-1.0f, false);
+                player.QUpdate(-2.0f, false);
+                player.UpdateModel(-2.0f);
             }
             else
             {
-                player.QUpdate(0.0f, false);
+                player.QUpdate(-1.0f, false);
+                player.UpdateModel(-1.0f);
             }
+
+            for(int i = 0; i < 50; i++)
+            {
+                player.RunSimulation();
+            }
+
+            currentPlayerMoveTimer = 0.0f;
         }
     }
 
@@ -171,14 +209,5 @@ public class GameManager : MonoBehaviour
         score = Mathf.Min(score, maxScore);
         scoreText.text = score.ToString();
         // ResetTreasure();
-    }
-
-    private void ResetTreasure()
-    {
-        // treasure = Instantiate(treasure, Vector3.zero, Quaternion.identity);
-        oldTreasurePosition = treasure.transform.position;
-        // treasure.transform.position = grid.NodeFromGridPoint(Random.Range(1, grid.columns - 1), Random.Range(1, grid.rows - 1)).worldPosition;
-        treasure.transform.position = grid.NodeFromGridPoint(2, grid.rows - 5).worldPosition;
-        world.UpdateWorldTreasure(oldTreasurePosition, treasure.transform.position);
     }
 }
