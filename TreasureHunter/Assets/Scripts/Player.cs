@@ -63,7 +63,7 @@ public class Player : MonoBehaviour
             PlayerState playerState = new PlayerState(currentState.Item1, currentState.Item2, currentState.Item3);
             actionValueFuction.AddPlayerState(playerState);
             policy.AddPlayerState(playerState);
-            model.AddPlayerState(playerState);
+            // model.AddPlayerState(playerState);
             return GetBestAction();
         }
     }
@@ -145,7 +145,7 @@ public class Player : MonoBehaviour
         else
             // Q[currentState][currentAction] += 0.01f * (reward - Q[currentState][currentAction]);
             actionValueFuction.Update(currentState, currentAction, 0.0f, reward, isEndState);
-        // currentState = nextState;
+        currentState = nextState;
     }
 
     public void UpdateModel(float reward)
@@ -186,7 +186,7 @@ public class Player : MonoBehaviour
             PlayerState playerState = new PlayerState(nextState.Item1, nextState.Item2, nextState.Item3);
             policy.AddPlayerState(playerState);
             actionValueFuction.AddPlayerState(playerState);
-            model.AddPlayerState(playerState);
+            // model.AddPlayerState(playerState);
             return GetMaxQ(nextState);
         }
     }
@@ -205,7 +205,7 @@ public class Player : MonoBehaviour
     {
         Serializer.WriteToBinaryFile<Policy>("Assets/Resources/policy.txt", policy);
         Serializer.WriteToBinaryFile<Q>("Assets/Resources/Q.txt", actionValueFuction);
-        Serializer.WriteToBinaryFile<Model>("Assets/Resources/model.txt", model);
+        // Serializer.WriteToBinaryFile<Model>("Assets/Resources/model.txt", model);
     }
 
     public void LoadData()
@@ -215,16 +215,16 @@ public class Player : MonoBehaviour
             //Load Q and Policy and initialize the StateDictionary
             policy = Serializer.ReadFromBinaryFile<Policy>("Assets/Resources/policy.txt");
             actionValueFuction = Serializer.ReadFromBinaryFile<Q>("Assets/Resources/Q.txt");
-            model = Serializer.ReadFromBinaryFile<Model>("Assets/Resources/model.txt");
+            // model = Serializer.ReadFromBinaryFile<Model>("Assets/Resources/model.txt");
             policy.InitializeStateDictionary();
             actionValueFuction.InitializeStateDictionary();
-            model.InitializeStateDictionary();
+            // model.InitializeStateDictionary();
         }
         else
         {
             policy = new Policy();
             actionValueFuction = new Q();
-            model = new Model();
+            // model = new Model();
         }
     }
 }

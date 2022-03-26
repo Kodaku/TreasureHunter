@@ -64,7 +64,7 @@ public class GameManager : MonoBehaviour
 
     private void Reset()
     {
-        // dataManager.RegisterObservation();
+        dataManager.RegisterObservation();
         dataManager.Reset();
 
         debugger.Reset();
@@ -96,7 +96,7 @@ public class GameManager : MonoBehaviour
         // score = 0;
         // scoreText.text = score.ToString();
 
-        // player.SaveData();
+        player.SaveData();
     }
 
     // Update is called once per frame
@@ -124,13 +124,15 @@ public class GameManager : MonoBehaviour
 
             player.Move(grid);
             player.SetNextState(world, grid);
-            player.UpdateAllTau();
+
+            // player.UpdateAllTau();
+
             if(player.HasPickedTreasure())
             {
                 //Increase score
                 player.ResetPickTreasure();
                 player.QUpdate(100.0f, true);
-                player.UpdateModel(100.0f);
+                // player.UpdateModel(100.0f);
                 IncreaseScore();
                 dataManager.TreasureFound();
                 Reset();
@@ -139,25 +141,25 @@ public class GameManager : MonoBehaviour
             {
                 player.ResetHitEnemy();
                 player.QUpdate(-100.0f, true);
-                player.UpdateModel(-100.0f);
+                // player.UpdateModel(-100.0f);
                 dataManager.EnemyFound();
                 Reset();
             }
             else if(player.IsStuck())
             {
                 player.QUpdate(-2.0f, false);
-                player.UpdateModel(-2.0f);
+                // player.UpdateModel(-2.0f);
             }
             else
             {
                 player.QUpdate(-1.0f, false);
-                player.UpdateModel(-1.0f);
+                // player.UpdateModel(-1.0f);
             }
 
-            for(int i = 0; i < 50; i++)
-            {
-                player.RunSimulation();
-            }
+            // for(int i = 0; i < 50; i++)
+            // {
+            //     player.RunSimulation();
+            // }
 
             currentPlayerMoveTimer = 0.0f;
         }
@@ -205,9 +207,8 @@ public class GameManager : MonoBehaviour
 
     private void IncreaseScore()
     {
-        score += 100;
+        score += 1;
         score = Mathf.Min(score, maxScore);
         scoreText.text = score.ToString();
-        // ResetTreasure();
     }
 }
