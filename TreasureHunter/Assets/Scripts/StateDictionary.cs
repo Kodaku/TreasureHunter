@@ -15,6 +15,7 @@ public class StateDictionary
         HashedState hashedState = playerState.GetHashedState();
         if(!stateDictionary.ContainsKey(hashedState))
         {
+            playerState.InitializeNextStates();
             stateDictionary.Add(hashedState, playerState);
         }
     }

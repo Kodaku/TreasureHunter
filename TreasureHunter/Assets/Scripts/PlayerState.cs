@@ -14,6 +14,7 @@ public class PlayerState
     private CellInfo currentCellInfo;
     private CellInfo[] neighboursCellsInfo;
     private PlayerAction[] actions;
+    [NonSerialized]
     private PlayerState[] nextStates;
     private Action[] actionSpace = {Action.LEFT, Action.UP, Action.DOWN, Action.RIGHT};
     [NonSerialized]
@@ -59,7 +60,7 @@ public class PlayerState
         }
     }
 
-    private void InitializeNextStates()
+    public void InitializeNextStates()
     {
         int totalActions = actionSpace.Length;
         nextStates = new PlayerState[totalActions];
