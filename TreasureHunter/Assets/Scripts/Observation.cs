@@ -59,7 +59,7 @@ public class Observation
 
     public void SaveToFile(bool append = true)
     {
-        string tsvPath = Application.dataPath + "/Resources/Observations.tsv";
+        string tsvPath = Application.dataPath + "/Resources/ObservationsDyna.tsv";
         string tsvData = m_startX + "\t" +
                         m_startY + "\t" +
                         m_episodeDuration.ToString().Replace(",", ".") + "\t" +

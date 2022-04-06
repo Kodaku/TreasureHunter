@@ -37,6 +37,7 @@ public class Model
     public void Update(HashedState currentHashedState, Action currentAction, HashedState nextHashedState, float reward)
     {
         PlayerState currentState = StateDictionary.GetPlayerState(currentHashedState);
+        // Debug.Log(currentState);
         PlayerState nextState = StateDictionary.GetPlayerState(nextHashedState);
         currentState.SetNextStateAndReward(currentAction, nextState, reward);
     }

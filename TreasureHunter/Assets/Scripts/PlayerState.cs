@@ -31,7 +31,7 @@ public class PlayerState
                         {_neighboursCellInfo.Item1, _neighboursCellInfo.Item2, _neighboursCellInfo.Item3, _neighboursCellInfo.Item4};
         GenerateHashCode();
         GenerateBasicActions();
-        InitializeNextStates();
+        // InitializeNextStates();
         InitializeTau();
     }
 
